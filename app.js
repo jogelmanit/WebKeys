@@ -276,57 +276,60 @@ function playHarmonium(ni, oct, el, id) {
   const freq = midiToHz(targetMidi);
   const now  = audioCtx.currentTime;
 
-  // Warm lowpass shaping
-  const lpf = audioCtx.createBiquadFilter();
-  lpf.type = 'lowpass'; lpf.frequency.value = 4000; lpf.Q.value = 0.5;
-
-  // Note gain with bellows-style attack
+  // Master note gain — this is what stopNote fades out
+  // Store as { osc: null, og: noteGain } so stopNote handles it
   const noteGain = audioCtx.createGain();
   noteGain.gain.setValueAtTime(0, now);
   noteGain.gain.linearRampToValueAtTime(volumeLevel * 0.8, now + 0.06);
-
-  lpf.connect(noteGain);
   noteGain.connect(dryGain);
   noteGain.connect(wetGain);
 
-  if (samplesLoaded && sampleBuffers.size > 0) {
-    // ── Sample playback with pitch shift ──────────────────────────────────────
-    const sampleMidi = nearestSampleMidi(targetMidi);
-    const buf = sampleBuffers.get(sampleMidi);
-    if (buf) {
-      // playbackRate = 2^((target - sample) / 12)
-      const semitonesDiff = targetMidi - sampleMidi;
-      const playbackRate  = Math.pow(2, semitonesDiff / 12);
+  // Warm lowpass — sits before noteGain
+  const lpf = audioCtx.createBiquadFilter();
+  lpf.type = 'lowpass';
+  lpf.frequency.value = 4000;
+  lpf.Q.value = 0.5;
+  lpf.connect(noteGain);
 
+  if (samplesLoaded && sampleBuffers.size > 0) {
+    // ── Real sample playback + pitch shift ────────────────────────────────────
+    const sampleMidi  = nearestSampleMidi(targetMidi);
+    const buf         = sampleBuffers.get(sampleMidi);
+    if (buf) {
       const src = audioCtx.createBufferSource();
       src.buffer = buf;
-      src.playbackRate.value = playbackRate;
-      src.loop = true;
-      // Loop the sustain portion (avoid click — loop last 80% of buffer)
+      src.playbackRate.value = Math.pow(2, (targetMidi - sampleMidi) / 12);
+      src.loop      = true;
       src.loopStart = buf.duration * 0.15;
       src.loopEnd   = buf.duration * 0.95;
       src.connect(lpf);
       src.start(now);
 
+      // IMPORTANT: store src as osc AND noteGain as og
+      // stopNote will: fade og.gain → 0  then  osc.stop()
       active.set(id, [{ osc: src, og: noteGain }]);
+    } else {
+      // Buffer missing for this midi — still register so stopNote can clean up
+      active.set(id, [{ osc: null, og: noteGain }]);
     }
   } else {
-    // ── Fallback synthesis while samples load ─────────────────────────────────
-    // 3 detuned sawtooth oscillators simulating reed ranks
+    // ── Fallback synthesis while samples are loading ───────────────────────────
     const nodes = [];
-    [[0,0.55],[4,0.30],[-3,0.28]].forEach(([cents, g]) => {
+    [[0, 0.55], [4, 0.30], [-3, 0.28]].forEach(([cents, g]) => {
       const osc = audioCtx.createOscillator();
       const og  = audioCtx.createGain();
       osc.type = 'sawtooth';
-      osc.frequency.value = freq * Math.pow(2, cents/1200);
+      osc.frequency.value = freq * Math.pow(2, cents / 1200);
       og.gain.value = g * 0.4;
-      osc.connect(og); og.connect(lpf);
+      osc.connect(og);
+      og.connect(lpf);
       osc.start(now);
-      nodes.push({osc, og});
+      nodes.push({ osc, og });
     });
-    active.set(id, nodes.concat([{osc:null, og:noteGain}]));
+    // noteGain is the master fade target — add it last with osc:null
+    nodes.push({ osc: null, og: noteGain });
+    active.set(id, nodes);
 
-    // Trigger actual sample load in background — next keypress will use samples
     if (!samplesLoading) loadHarmoniumSamples();
   }
 
@@ -337,17 +340,18 @@ function playHarmonium(ni, oct, el, id) {
 }
 
 function stopNote(ni, oct, el) {
-  const id=`${ni}-${oct}`, nodes=active.get(id);
-  if(!nodes) return;
-  active.delete(id); // delete immediately so re-press works right away
-  if(el) el.classList.remove('active');
+  const id = `${ni}-${oct}`;
+  const nodes = active.get(id);
+  if (!nodes) return;
+  active.delete(id); // delete immediately so re-press works
+  if (el) el.classList.remove('active');
+  if (!audioCtx) return;
 
-  if(!audioCtx) return;
   const rel = sustainMs / 1000;
   const now = audioCtx.currentTime;
 
-  nodes.forEach(({osc, og}) => {
-    // Fade out the gain
+  nodes.forEach(({ osc, og }) => {
+    // 1. Fade the gain node to silence
     if (og && og.gain) {
       try {
         og.gain.cancelScheduledValues(now);
@@ -355,9 +359,15 @@ function stopNote(ni, oct, el) {
         og.gain.exponentialRampToValueAtTime(0.0001, now + rel);
       } catch(e) {}
     }
-    // Stop the source (works for both OscillatorNode and AudioBufferSourceNode)
+    // 2. Stop the audio source after the fade completes
     if (osc) {
       try { osc.stop(now + rel + 0.05); } catch(e) {}
+    }
+    // 3. Disconnect after stop to fully release the node (prevents zombie nodes)
+    if (og) {
+      setTimeout(() => {
+        try { og.disconnect(); } catch(e) {}
+      }, (rel + 0.1) * 1000);
     }
   });
 }
