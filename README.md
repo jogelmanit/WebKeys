@@ -6,6 +6,7 @@
 [![CSS](https://img.shields.io/badge/CSS3-1572B6?style=flat&logo=css3&logoColor=white)](https://developer.mozilla.org/en-US/docs/Web/CSS)
 [![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=flat&logo=javascript&logoColor=black)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
 [![Web Audio API](https://img.shields.io/badge/Web_Audio_API-FF6B35?style=flat)](https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green?style=flat)](./LICENSE)
 
 ---
 
@@ -186,7 +187,25 @@ All sound is generated live in the browser — no audio samples are downloaded.
 
 ## 📄 License
 
-This project is open source and free to use, modify, and distribute.
+This project is licensed under the **MIT License** — see the [LICENSE](./LICENSE) file for full details.
+
+```
+MIT License
+
+Copyright (c) 2026 Manit Sunilkumar Jogel
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+```
+
+In short — you are free to **use, copy, modify, merge, publish, distribute, and sell** this software, as long as you keep the copyright notice and licence text in any copies.
 
 ---
 
