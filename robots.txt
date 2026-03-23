@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://jogelmanit.github.io/WebKeys/sitemap.xml
