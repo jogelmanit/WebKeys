@@ -217,125 +217,79 @@ function playNote(ni, oct, el) {
   if(el){ el.classList.add('active'); ripple(el); }
 }
 
-// ─── Harmonium Sampler ────────────────────────────────────────────────────────
-// Loads real recorded harmonium WAV samples from nbrosowsky/tonejs-instruments
-// (MIT licensed, hosted on GitHub Pages) then pitch-shifts them for every note.
-// Sample set covers: A1 C2 D#2 F#2 A2 C3 D#3 F#3 A3 C4 D#4 F#4 A4 C5 D#5 F#5 A5
-// All other notes are covered by pitch-shifting the nearest sample.
-
-const BASE_URL = 'https://nbrosowsky.github.io/tonejs-instruments/samples/harmonium/';
-
-// Available sample notes (MIDI numbers) and their filenames
-const SAMPLE_MAP = {
-  33: 'A1.mp3',  36: 'C2.mp3',  39: 'Ds2.mp3', 42: 'Fs2.mp3',
-  45: 'A2.mp3',  48: 'C3.mp3',  51: 'Ds3.mp3', 54: 'Fs3.mp3',
-  57: 'A3.mp3',  60: 'C4.mp3',  63: 'Ds4.mp3', 66: 'Fs4.mp3',
-  69: 'A4.mp3',  72: 'C5.mp3',  75: 'Ds5.mp3', 78: 'Fs5.mp3',
-  81: 'A5.mp3',
-};
-const SAMPLE_MIDIS = Object.keys(SAMPLE_MAP).map(Number).sort((a,b)=>a-b);
-
-// Cache: MIDI number → AudioBuffer
-const sampleBuffers = new Map();
-let samplesLoaded = false;
-let samplesLoading = false;
-
-// Find nearest sample MIDI for a given target MIDI
-function nearestSampleMidi(targetMidi) {
-  let best = SAMPLE_MIDIS[0];
-  let bestDist = Math.abs(targetMidi - best);
-  for (const m of SAMPLE_MIDIS) {
-    const d = Math.abs(targetMidi - m);
-    if (d < bestDist) { bestDist = d; best = m; }
-  }
-  return best;
-}
-
-// Load all samples into AudioBuffers
-async function loadHarmoniumSamples() {
-  if (samplesLoading || samplesLoaded) return;
-  samplesLoading = true;
-  const entries = Object.entries(SAMPLE_MAP);
-  await Promise.all(entries.map(async ([midi, file]) => {
-    try {
-      const resp = await fetch(BASE_URL + file);
-      const arr  = await resp.arrayBuffer();
-      const buf  = await audioCtx.decodeAudioData(arr);
-      sampleBuffers.set(Number(midi), buf);
-    } catch(e) {
-      console.warn('Failed to load sample:', file, e);
-    }
-  }));
-  samplesLoaded = true;
-  samplesLoading = false;
-  console.log(`Loaded ${sampleBuffers.size}/${entries.length} harmonium samples`);
-}
+// ─── Harmonium synthesis ─────────────────────────────────────────────────────
+// Pure Web Audio — no external files, no CORS, instant playback.
+// 3 detuned reed ranks + harmonic partials + EQ chain + LFO bellows flutter.
 
 function playHarmonium(ni, oct, el, id) {
-  const targetMidi = (oct + 1) * 12 + ((ni + currentKeyOffset + 120) % 12);
-  const freq = midiToHz(targetMidi);
+  const freq = midiToHz((oct + 1) * 12 + ((ni + currentKeyOffset + 120) % 12));
   const now  = audioCtx.currentTime;
+  const nodes = [];
 
-  // Master note gain — this is what stopNote fades out
-  // Store as { osc: null, og: noteGain } so stopNote handles it
-  const noteGain = audioCtx.createGain();
-  noteGain.gain.setValueAtTime(0, now);
-  noteGain.gain.linearRampToValueAtTime(volumeLevel * 0.8, now + 0.06);
-  noteGain.connect(dryGain);
-  noteGain.connect(wetGain);
+  // Master gain — bellows slow attack
+  const masterGainH = audioCtx.createGain();
+  masterGainH.gain.setValueAtTime(0, now);
+  masterGainH.gain.linearRampToValueAtTime(volumeLevel * 0.55, now + 0.08);
+  masterGainH.connect(dryGain);
+  masterGainH.connect(wetGain);
 
-  // Warm lowpass — sits before noteGain
+  // Filter chain for reed tone shaping
+  const lowShelf = audioCtx.createBiquadFilter();
+  lowShelf.type = 'lowshelf'; lowShelf.frequency.value = 300; lowShelf.gain.value = 4;
+
+  const midPeak = audioCtx.createBiquadFilter();
+  midPeak.type = 'peaking'; midPeak.frequency.value = 900; midPeak.Q.value = 1.8; midPeak.gain.value = 7;
+
+  const highShelf = audioCtx.createBiquadFilter();
+  highShelf.type = 'highshelf'; highShelf.frequency.value = 3000; highShelf.gain.value = -10;
+
   const lpf = audioCtx.createBiquadFilter();
-  lpf.type = 'lowpass';
-  lpf.frequency.value = 4000;
-  lpf.Q.value = 0.5;
-  lpf.connect(noteGain);
+  lpf.type = 'lowpass'; lpf.frequency.value = 5000; lpf.Q.value = 0.5;
 
-  if (samplesLoaded && sampleBuffers.size > 0) {
-    // ── Real sample playback + pitch shift ────────────────────────────────────
-    const sampleMidi  = nearestSampleMidi(targetMidi);
-    const buf         = sampleBuffers.get(sampleMidi);
-    if (buf) {
-      const src = audioCtx.createBufferSource();
-      src.buffer = buf;
-      src.playbackRate.value = Math.pow(2, (targetMidi - sampleMidi) / 12);
-      src.loop      = true;
-      src.loopStart = buf.duration * 0.15;
-      src.loopEnd   = buf.duration * 0.95;
-      src.connect(lpf);
-      src.start(now);
+  lowShelf.connect(midPeak);
+  midPeak.connect(highShelf);
+  highShelf.connect(lpf);
+  lpf.connect(masterGainH);
 
-      // IMPORTANT: store src as osc AND noteGain as og
-      // stopNote will: fade og.gain → 0  then  osc.stop()
-      active.set(id, [{ osc: src, og: noteGain }]);
-    } else {
-      // Buffer missing for this midi — still register so stopNote can clean up
-      active.set(id, [{ osc: null, og: noteGain }]);
-    }
-  } else {
-    // ── Fallback synthesis while samples are loading ───────────────────────────
-    const nodes = [];
-    [[0, 0.55], [4, 0.30], [-3, 0.28]].forEach(([cents, g]) => {
+  // LFO — bellows flutter ~5.5 Hz
+  const lfo = audioCtx.createOscillator();
+  const lfoGain = audioCtx.createGain();
+  lfo.type = 'sine'; lfo.frequency.value = 5.5;
+  lfoGain.gain.value = freq * 0.003;
+  lfo.connect(lfoGain);
+  lfo.start(now);
+  nodes.push({ osc: lfo, og: lfoGain });
+
+  // 3 detuned reed ranks
+  [{detune:0,vol:.60},{detune:5,vol:.35},{detune:-4,vol:.32}].forEach(({detune,vol}) => {
+    const dr = Math.pow(2, detune / 1200);
+    [
+      {mult:1,   type:'sawtooth', g:.70},
+      {mult:2,   type:'sawtooth', g:.28},
+      {mult:3,   type:'sine',     g:.16},
+      {mult:4,   type:'sine',     g:.09},
+      {mult:0.5, type:'sine',     g:.08},
+    ].forEach(({mult, type, g}) => {
       const osc = audioCtx.createOscillator();
       const og  = audioCtx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.value = freq * Math.pow(2, cents / 1200);
-      og.gain.value = g * 0.4;
+      osc.type = type;
+      osc.frequency.value = freq * mult * dr;
+      og.gain.value = vol * g * 0.35;
+      lfoGain.connect(osc.frequency);
       osc.connect(og);
-      og.connect(lpf);
+      og.connect(lowShelf);
       osc.start(now);
-      nodes.push({ osc, og });
+      nodes.push({osc, og});
     });
-    // noteGain is the master fade target — add it last with osc:null
-    nodes.push({ osc: null, og: noteGain });
-    active.set(id, nodes);
+  });
 
-    if (!samplesLoading) loadHarmoniumSamples();
-  }
+  // masterGainH entry — stopNote fades this to silence the note
+  nodes.push({ osc: null, og: masterGainH });
+  active.set(id, nodes);
 
   const dn = NOTE_NAMES[((ni + currentKeyOffset) % 12 + 12) % 12];
-  noteNameEl.textContent = `${dn}${oct}`;
-  noteFreqEl.textContent = `${freq.toFixed(1)} Hz`;
+  noteNameEl.textContent = dn + oct;
+  noteFreqEl.textContent = freq.toFixed(1) + ' Hz';
   if (el) { el.classList.add('active'); ripple(el); }
 }
 
@@ -566,10 +520,7 @@ document.querySelectorAll('#instrument-group .pill').forEach(b=>{
     document.querySelectorAll('#instrument-group .pill').forEach(x=>{x.classList.remove('active');x.setAttribute('aria-checked','false');});
     b.classList.add('active'); b.setAttribute('aria-checked','true');
     currentInstrument=b.dataset.instrument;
-    // Pre-load harmonium samples as soon as instrument is selected
-    if (currentInstrument === 'harmonium' && audioCtx && !samplesLoaded) {
-      loadHarmoniumSamples();
-    }
+
   };
 });
 document.querySelectorAll('#scale-group .pill').forEach(b=>{
@@ -688,10 +639,7 @@ updateHint();
 ['click','keydown','touchstart'].forEach(ev=>
   document.addEventListener(ev,()=>{
     initAudio();
-    // If harmonium is already selected, start loading samples right away
-    if (currentInstrument === 'harmonium' && !samplesLoaded) {
-      loadHarmoniumSamples();
-    }
+
   },{once:true})
 );
 
