@@ -474,3 +474,39 @@ header, .controls-panel, .keyboard-hint,
 .loading-sub { font-size: 0.65rem; color: var(--text-3); letter-spacing: 0.12em; text-transform: uppercase; }
 .loading-bar-wrap { width: 200px; height: 3px; background: var(--surface3); border-radius: 2px; overflow: hidden; margin-top: 0.5rem; }
 .loading-bar { height: 100%; background: var(--gold); width: 0%; transition: width 0.3s ease; box-shadow: 0 0 10px var(--gold); }
+
+/* ============ SEO CONTENT SECTION ============ */
+.seo-content {
+  max-width: 760px;
+  width: 90%;
+  margin: 2.5rem auto 0;
+  padding: 1.8rem 2rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--text-2);
+  font-size: 0.78rem;
+  line-height: 1.75;
+}
+.seo-content h1 {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.3rem;
+  color: var(--text-1);
+  margin-bottom: 0.6rem;
+  font-weight: normal;
+}
+.seo-content h2 {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-dim);
+  margin: 1.2rem 0 0.4rem;
+}
+.seo-content p {
+  margin-bottom: 0.5rem;
+}
+.seo-content strong {
+  color: var(--text-1);
+  font-weight: 500;
+}
