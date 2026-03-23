@@ -1,12 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- ═══════════════════════════════════════════════════
+       Core meta
+  ═══════════════════════════════════════════════════ -->
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WebKeys — Browser Piano</title>
-  <link rel="stylesheet" href="style.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+
+  <!-- ── Primary SEO ── -->
+  <title>WebKeys – Free Online Piano & Harmonium | Play in Your Browser</title>
+  <meta name="description" content="WebKeys is a free browser-based piano and harmonium you can play instantly — no download needed. Choose Piano, Organ, Synth or Harmonium, add reverb, change key and octave. Works on desktop and mobile." />
+  <meta name="keywords" content="online piano, virtual piano, browser piano, web piano, online harmonium, virtual harmonium, free piano keyboard, play piano online, music instrument browser, web audio piano, online keyboard instrument, harmonium online, piano simulator, virtual keyboard, music web app" />
+  <meta name="author" content="Manit Sunilkumar Jogel" />
+  <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+  <meta name="theme-color" content="#0a0a0f" />
+
+  <!-- ── Canonical URL ── -->
+  <link rel="canonical" href="https://jogelmanit.github.io/WebKeys/" />
+
+  <!-- ── Open Graph (Facebook, WhatsApp, LinkedIn) ── -->
+  <meta property="og:type"        content="website" />
+  <meta property="og:url"         content="https://jogelmanit.github.io/WebKeys/" />
+  <meta property="og:title"       content="WebKeys – Free Online Piano & Harmonium" />
+  <meta property="og:description" content="Play a beautiful browser piano or harmonium instantly — no download, no login. Piano, Organ, Synth and Harmonium with reverb, key change and octave shift." />
+  <meta property="og:image"       content="https://jogelmanit.github.io/WebKeys/og-image.png" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height"content="630" />
+  <meta property="og:image:alt"   content="WebKeys browser piano keyboard with gold keys on dark background" />
+  <meta property="og:site_name"   content="WebKeys" />
+  <meta property="og:locale"      content="en_US" />
+
+  <!-- ── Twitter Card ── -->
+  <meta name="twitter:card"        content="summary_large_image" />
+  <meta name="twitter:url"         content="https://jogelmanit.github.io/WebKeys/" />
+  <meta name="twitter:title"       content="WebKeys – Free Online Piano & Harmonium" />
+  <meta name="twitter:description" content="Play piano, organ, synth or harmonium in your browser — free, instant, no download." />
+  <meta name="twitter:image"       content="https://jogelmanit.github.io/WebKeys/og-image.png" />
+  <meta name="twitter:image:alt"   content="WebKeys browser piano" />
+
+  <!-- ── Structured Data: WebApplication (Google Rich Results) ── -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "WebKeys",
+    "url": "https://jogelmanit.github.io/WebKeys/",
+    "description": "A free browser-based piano and harmonium instrument. Play Piano, Organ, Synth or Harmonium with reverb, key change, octave shift and scale filter — no download required.",
+    "applicationCategory": "MusicApplication",
+    "operatingSystem": "Any",
+    "browserRequirements": "Requires a modern browser with Web Audio API support (Chrome 66+, Firefox 60+, Safari 14+, Edge 79+)",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "featureList": [
+      "Piano keyboard playable via mouse, keyboard and touch",
+      "Four instruments: Piano, Organ, Synth, Harmonium",
+      "Reverb effect with adjustable wet/dry mix",
+      "Key transposition across all 12 semitones",
+      "Octave shift across 7 octaves",
+      "Sustain control",
+      "Scale filter: Chromatic, Major, Minor, Pentatonic",
+      "Live waveform visualizer"
+    ],
+    "author": {
+      "@type": "Person",
+      "name": "Manit Sunilkumar Jogel"
+    },
+    "softwareVersion": "1.0.0",
+    "datePublished": "2026-03-01",
+    "inLanguage": "en",
+    "isAccessibleForFree": true,
+    "keywords": "online piano, virtual harmonium, browser keyboard instrument, free piano, web audio"
+  }
+  </script>
+
+  <!-- ── Structured Data: BreadcrumbList ── -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://jogelmanit.github.io/WebKeys/"
+      }
+    ]
+  }
+  </script>
+
+  <!-- ── Fonts: preconnect first, then load ── -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <!-- ── Stylesheet ── -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- ── Favicon (inline SVG as data URI — no extra file needed) ── -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎹</text></svg>" />
+
 </head>
 <body>
 
@@ -15,101 +112,99 @@
     <canvas id="bgCanvas"></canvas>
   </div>
 
-  <!-- Header -->
+  <!-- ══════════════════════════════════════════
+       HEADER — semantic + keyword-rich
+  ══════════════════════════════════════════ -->
   <header class="site-header">
     <div class="logo">
-      <span class="logo-icon">𝄞</span>
+      <span class="logo-icon" aria-hidden="true">𝄞</span>
       <span class="logo-text">WebKeys</span>
     </div>
-    <p class="tagline">A browser instrument — play with your keyboard or touch</p>
+    <p class="tagline">Free online piano &amp; harmonium — play instantly in your browser</p>
   </header>
 
-  <!-- Controls Panel -->
+  <!-- ══════════════════════════════════════════
+       CONTROLS
+  ══════════════════════════════════════════ -->
   <section class="controls-panel" aria-label="Instrument controls">
 
-    <!-- Instrument selector -->
     <div class="control-group" id="instrument-group">
       <label class="control-label">Instrument</label>
       <div class="pill-row" role="radiogroup" aria-label="Instrument type">
-        <button class="pill active" data-instrument="piano" role="radio" aria-checked="true">Piano</button>
-        <button class="pill" data-instrument="organ" role="radio" aria-checked="false">Organ</button>
-        <button class="pill" data-instrument="synth" role="radio" aria-checked="false">Synth</button>
-        <button class="pill" data-instrument="harmonium" role="radio" aria-checked="false">Harmonium</button>
+        <button class="pill active" data-instrument="piano"     role="radio" aria-checked="true">Piano</button>
+        <button class="pill"        data-instrument="organ"     role="radio" aria-checked="false">Organ</button>
+        <button class="pill"        data-instrument="synth"     role="radio" aria-checked="false">Synth</button>
+        <button class="pill"        data-instrument="harmonium" role="radio" aria-checked="false">Harmonium</button>
       </div>
     </div>
 
-    <!-- Key / Root note -->
     <div class="control-group">
-      <label class="control-label" for="key-select">Key <span class="key-badge" id="current-key-badge">C</span></label>
+      <label class="control-label" for="key-display">Key <span class="key-badge" id="current-key-badge">C</span></label>
       <div class="knob-row">
-        <button class="icon-btn" id="key-down" aria-label="Lower key">&#9660;</button>
-        <span class="knob-value" id="key-display">C Major</span>
-        <button class="icon-btn" id="key-up" aria-label="Raise key">&#9650;</button>
+        <button class="icon-btn" id="key-down" aria-label="Lower key by one semitone">&#9660;</button>
+        <span class="knob-value" id="key-display" aria-live="polite">C Major</span>
+        <button class="icon-btn" id="key-up"   aria-label="Raise key by one semitone">&#9650;</button>
       </div>
     </div>
 
-    <!-- Octave -->
     <div class="control-group">
       <label class="control-label">Octave</label>
       <div class="knob-row">
         <button class="icon-btn" id="oct-down" aria-label="Lower octave">&#9660;</button>
-        <span class="knob-value" id="oct-display">4</span>
-        <button class="icon-btn" id="oct-up" aria-label="Raise octave">&#9650;</button>
+        <span class="knob-value" id="oct-display" aria-live="polite">4</span>
+        <button class="icon-btn" id="oct-up"   aria-label="Raise octave">&#9650;</button>
       </div>
     </div>
 
-    <!-- Reverb -->
     <div class="control-group">
-      <label class="control-label">Reverb</label>
+      <label class="control-label" for="reverb-slider">Reverb</label>
       <div class="slider-wrap">
-        <input type="range" id="reverb-slider" min="0" max="100" value="20" class="styled-slider" aria-label="Reverb amount" />
+        <input type="range" id="reverb-slider"  min="0"   max="100"  value="20"  class="styled-slider" aria-label="Reverb amount" />
         <span class="slider-val" id="reverb-val">20%</span>
       </div>
     </div>
 
-    <!-- Sustain / Release -->
     <div class="control-group">
-      <label class="control-label">Sustain</label>
+      <label class="control-label" for="sustain-slider">Sustain</label>
       <div class="slider-wrap">
         <input type="range" id="sustain-slider" min="100" max="3000" value="800" step="50" class="styled-slider" aria-label="Sustain duration" />
         <span class="slider-val" id="sustain-val">0.8s</span>
       </div>
     </div>
 
-    <!-- Volume -->
     <div class="control-group">
-      <label class="control-label">Volume</label>
+      <label class="control-label" for="volume-slider">Volume</label>
       <div class="slider-wrap">
-        <input type="range" id="volume-slider" min="0" max="100" value="80" class="styled-slider" aria-label="Volume" />
+        <input type="range" id="volume-slider"  min="0"   max="100"  value="80"  class="styled-slider" aria-label="Volume" />
         <span class="slider-val" id="volume-val">80%</span>
       </div>
     </div>
 
-    <!-- Scale filter -->
     <div class="control-group" id="scale-group">
       <label class="control-label">Scale</label>
       <div class="pill-row" role="radiogroup" aria-label="Scale mode">
-        <button class="pill active" data-scale="chromatic" role="radio" aria-checked="true">All</button>
-        <button class="pill" data-scale="major" role="radio" aria-checked="false">Major</button>
-        <button class="pill" data-scale="minor" role="radio" aria-checked="false">Minor</button>
-        <button class="pill" data-scale="pentatonic" role="radio" aria-checked="false">Penta</button>
+        <button class="pill active" data-scale="chromatic"  role="radio" aria-checked="true">All</button>
+        <button class="pill"        data-scale="major"      role="radio" aria-checked="false">Major</button>
+        <button class="pill"        data-scale="minor"      role="radio" aria-checked="false">Minor</button>
+        <button class="pill"        data-scale="pentatonic" role="radio" aria-checked="false">Penta</button>
       </div>
     </div>
 
   </section>
 
-  <!-- Keyboard label hints -->
-  <div class="keyboard-hint">
-    <span>Keyboard shortcuts: <kbd>A</kbd>–<kbd>K</kbd> = white keys &nbsp;|&nbsp; <kbd>W</kbd><kbd>E</kbd><kbd>T</kbd><kbd>Y</kbd><kbd>U</kbd> = black keys</span>
+  <!-- Keyboard shortcut hints -->
+  <div class="keyboard-hint" aria-label="Keyboard shortcut guide">
+    <span>White keys: <kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd><kbd>T</kbd><kbd>Y</kbd><kbd>U</kbd> &nbsp;·&nbsp; Black keys: <kbd>1</kbd><kbd>2</kbd><kbd>4</kbd><kbd>5</kbd><kbd>6</kbd> &nbsp;·&nbsp; Next octave: <kbd>I</kbd><kbd>O</kbd><kbd>P</kbd><kbd>[</kbd><kbd>]</kbd> / <kbd>8</kbd><kbd>9</kbd><kbd>-</kbd><kbd>=</kbd></span>
   </div>
 
-  <!-- Piano keyboard -->
-  <main class="keyboard-stage" aria-label="Piano keyboard">
-    <div class="keyboard-wrap" id="keyboard-wrap">
-      <!-- Keys injected by JS -->
+  <!-- ══════════════════════════════════════════
+       PIANO KEYBOARD — main landmark
+  ══════════════════════════════════════════ -->
+  <main class="keyboard-stage" aria-label="Virtual piano keyboard — click or press keyboard keys to play">
+    <div class="keyboard-wrap" id="keyboard-wrap" role="group" aria-label="Piano keys">
+      <!-- Keys injected by app.js -->
     </div>
 
-    <!-- Visualizer -->
     <div class="visualizer-bar" id="visualizer" aria-hidden="true">
       <canvas id="vizCanvas"></canvas>
     </div>
@@ -121,9 +216,43 @@
     <span class="note-freq" id="note-freq"></span>
   </div>
 
-  <!-- Footer -->
+  <!-- ══════════════════════════════════════════
+       SEO CONTENT SECTION
+       Visible text that Google indexes —
+       placed below the interactive app.
+  ══════════════════════════════════════════ -->
+  <section class="seo-content" aria-label="About WebKeys">
+    <h1>Free Online Piano &amp; Harmonium</h1>
+    <p>
+      <strong>WebKeys</strong> is a free virtual piano keyboard you can play directly in your browser —
+      no download, no signup, no plugins required. Click any key, tap on mobile, or use your computer keyboard
+      to play real notes with full audio synthesis powered by the <strong>Web Audio API</strong>.
+    </p>
+    <h2>Instruments</h2>
+    <p>
+      Choose from four instruments: <strong>Piano</strong> (warm triangle-wave harmonics),
+      <strong>Organ</strong> (sustained sine drawbars), <strong>Synth</strong> (filtered sawtooth),
+      and <strong>Harmonium</strong> (detuned reed ranks with bellows attack — perfect for Indian classical music practice).
+    </p>
+    <h2>Features</h2>
+    <p>
+      Adjust <strong>reverb</strong> for concert-hall depth, change the <strong>key</strong> across all 12 semitones,
+      shift the <strong>octave</strong> across 7 ranges, control <strong>sustain</strong> and <strong>volume</strong>,
+      and filter the keyboard to highlight only <strong>Major</strong>, <strong>Minor</strong>, or
+      <strong>Pentatonic</strong> scale notes — ideal for learning and improvising.
+    </p>
+  </section>
+
+  <!-- ══════════════════════════════════════════
+       FOOTER
+  ══════════════════════════════════════════ -->
   <footer class="site-footer">
-    <span>WebKeys &copy; 2026 &nbsp;·&nbsp; Built with Web Audio API</span>
+    <span>
+      WebKeys &copy; 2026 &nbsp;·&nbsp;
+      Made by <a href="https://github.com/jogelmanit" rel="author" style="color:var(--gold-dim);text-decoration:none;">Manit Sunilkumar Jogel</a>
+      &nbsp;·&nbsp; Built with Web Audio API
+      &nbsp;·&nbsp; <a href="https://github.com/jogelmanit/WebKeys" rel="noopener" style="color:var(--gold-dim);text-decoration:none;">GitHub</a>
+    </span>
   </footer>
 
   <script src="app.js"></script>
