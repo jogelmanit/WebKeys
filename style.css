@@ -3,7 +3,6 @@
    Dark luxurious piano aesthetic
    ============================================ */
 
-/* ---- Reset & base ---- */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -17,27 +16,21 @@
   --surface3:     #222230;
   --border:       rgba(255,255,255,0.07);
   --border-glow:  rgba(212,175,100,0.35);
-
   --gold:         #d4af64;
   --gold-dim:     #9a7d3a;
   --gold-glow:    rgba(212,175,100,0.18);
-
   --text-1:       #f0ead8;
   --text-2:       #a09880;
   --text-3:       #5a5446;
-
   --white-key-w:  52px;
   --white-key-h:  210px;
   --black-key-w:  32px;
   --black-key-h:  130px;
   --key-radius:   6px;
-
   --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
-html, body {
-  height: 100%;
-}
+html, body { height: 100%; }
 
 body {
   background: var(--bg);
@@ -51,7 +44,6 @@ body {
   padding-bottom: 2rem;
 }
 
-/* ---- Background canvas ---- */
 .bg-layer {
   position: fixed;
   inset: 0;
@@ -253,7 +245,7 @@ header, .controls-panel, .keyboard-hint,
   margin-top: 1rem;
 }
 
-/* Outer shell — decorative surround */
+/* Outer decorative shell */
 .keyboard-wrap {
   background: linear-gradient(180deg, #1a1a22 0%, #0e0e14 100%);
   border: 1px solid var(--border);
@@ -268,35 +260,28 @@ header, .controls-panel, .keyboard-hint,
   max-width: 98vw;
 }
 
-/*
-  .keys-row: single flat container.
-  White keys are inline-block side-by-side.
-  Black keys are position:absolute over them.
-  Height = white key height.
-*/
+/* Single flat row — white keys flex side by side,
+   black keys absolutely positioned on top */
 .keys-row {
   position: relative;
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  /* width and height set by JS */
 }
 
-/* ---- White keys ---- */
+/* ---- White keys — ORIGINAL STYLE UNCHANGED ---- */
 .key-white {
+  position: relative;
   flex: 0 0 var(--white-key-w);
   width: var(--white-key-w);
   height: var(--white-key-h);
   background: linear-gradient(180deg, #f8f3ec 0%, #e8e0d0 100%);
-  border-left: 1px solid #b0a898;
-  border-bottom: 1px solid #b0a898;
-  border-right: 1px solid #b0a898;
+  border: 1px solid #b0a898;
   border-top: none;
   border-radius: 0 0 var(--key-radius) var(--key-radius);
   cursor: pointer;
-  position: relative;
   transition: background 0.08s, box-shadow 0.08s, transform 0.06s;
-  box-shadow: inset 0 -4px 6px rgba(0,0,0,0.12);
+  box-shadow: inset 0 -4px 6px rgba(0,0,0,0.12), 2px 0 0 rgba(0,0,0,0.06);
   user-select: none;
   -webkit-user-select: none;
   z-index: 1;
@@ -311,6 +296,7 @@ header, .controls-panel, .keyboard-hint,
   font-family: 'DM Mono', monospace;
   color: #b0a898;
   pointer-events: none;
+  letter-spacing: 0.04em;
 }
 .key-white:hover {
   background: linear-gradient(180deg, #fffcf5 0%, #f0e8d8 100%);
@@ -324,18 +310,19 @@ header, .controls-panel, .keyboard-hint,
   border-color: #c8a030;
   z-index: 2;
 }
-.key-white.scale-inactive { opacity: 0.38; filter: grayscale(0.5); }
+.key-white.scale-inactive {
+  opacity: 0.38;
+  filter: grayscale(0.5);
+}
 
-/* ---- Black keys ---- */
+/* ---- Black keys — ORIGINAL STYLE UNCHANGED ---- */
 .key-black {
   position: absolute;
   top: 0;
   width: var(--black-key-w);
   height: var(--black-key-h);
   background: linear-gradient(180deg, #1e1e2a 0%, #0d0d12 60%, #1a1a22 100%);
-  border-left: 1px solid #050508;
-  border-right: 1px solid #050508;
-  border-bottom: 1px solid #050508;
+  border: 1px solid #050508;
   border-top: none;
   border-radius: 0 0 var(--key-radius) var(--key-radius);
   cursor: pointer;
@@ -361,13 +348,17 @@ header, .controls-panel, .keyboard-hint,
 }
 .key-black:hover {
   background: linear-gradient(180deg, #2a2a38 0%, #1a1a24 60%, #222230 100%);
-  box-shadow: inset 0 -3px 5px rgba(0,0,0,0.4), 0 0 12px rgba(212,175,100,0.1);
+  box-shadow:
+    inset 0 -3px 5px rgba(0,0,0,0.4),
+    0 0 12px rgba(212,175,100,0.1);
   z-index: 11;
 }
 .key-black.active {
   background: linear-gradient(180deg, #5a3a00 0%, #3a2800 100%);
   transform: translateY(3px);
-  box-shadow: inset 0 2px 6px rgba(0,0,0,0.6), 0 0 18px rgba(212,175,100,0.25);
+  box-shadow:
+    inset 0 2px 6px rgba(0,0,0,0.6),
+    0 0 18px rgba(212,175,100,0.25);
   z-index: 12;
 }
 .key-black.scale-inactive { opacity: 0.3; }
