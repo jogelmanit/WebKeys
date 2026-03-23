@@ -73,6 +73,44 @@ let currentInstrument='piano', currentScale='chromatic';
 let reverbAmt=0.2, sustainMs=800, volumeLevel=0.8;
 const active = new Map();
 
+// ─── Global pointer tracking (prevents stuck keys) ────────────────────────────
+// Tracks which note each mouse/touch is currently holding
+const pointerHeld = new Map(); // 'mouse' → {ni, oct, el}
+const touchHeld   = new Map(); // touchIdentifier → {ni, oct, el}
+
+function releasePointer(key, map) {
+  const held = map.get(key);
+  if (held) { stopNote(held.ni, held.oct, held.el); map.delete(key); }
+}
+
+// Global mouseup — fires even if mouse released outside a key
+document.addEventListener('mouseup', e => {
+  if (e.button !== 0) return;
+  releasePointer('mouse', pointerHeld);
+});
+
+// Global touchend / touchcancel — fires for any touch lift
+document.addEventListener('touchend', e => {
+  for (const t of e.changedTouches) releasePointer(t.identifier, touchHeld);
+}, {passive:true});
+document.addEventListener('touchcancel', e => {
+  for (const t of e.changedTouches) releasePointer(t.identifier, touchHeld);
+}, {passive:true});
+
+// Safety net — stop ALL active notes if window loses focus (e.g. alt-tab)
+window.addEventListener('blur', () => {
+  pointerHeld.forEach((held, key) => { stopNote(held.ni, held.oct, held.el); });
+  touchHeld.forEach((held, key)   => { stopNote(held.ni, held.oct, held.el); });
+  pointerHeld.clear();
+  touchHeld.clear();
+  // Also kill any notes stuck in active map
+  active.forEach((nodes, id) => {
+    const [ni, oct] = id.split('-').map(Number);
+    const el = document.querySelector(`[data-note-index="${ni}"][data-octave="${oct}"]`);
+    stopNote(ni, oct, el);
+  });
+});
+
 // ─── DOM ──────────────────────────────────────────────────────────────────────
 
 const kbWrap      = document.getElementById('keyboard-wrap');
@@ -301,17 +339,27 @@ function playHarmonium(ni, oct, el, id) {
 function stopNote(ni, oct, el) {
   const id=`${ni}-${oct}`, nodes=active.get(id);
   if(!nodes) return;
-  const rel=sustainMs/1000, now=audioCtx.currentTime;
-  nodes.forEach(({osc,og})=>{
-    if(og && og.gain){
-      og.gain.cancelScheduledValues(now);
-      og.gain.setValueAtTime(og.gain.value,now);
-      og.gain.exponentialRampToValueAtTime(.0001,now+rel);
-    }
-    if(osc) try { osc.stop(now+rel+.05); } catch(e){}
-  });
-  active.delete(id);
+  active.delete(id); // delete immediately so re-press works right away
   if(el) el.classList.remove('active');
+
+  if(!audioCtx) return;
+  const rel = sustainMs / 1000;
+  const now = audioCtx.currentTime;
+
+  nodes.forEach(({osc, og}) => {
+    // Fade out the gain
+    if (og && og.gain) {
+      try {
+        og.gain.cancelScheduledValues(now);
+        og.gain.setValueAtTime(og.gain.value, now);
+        og.gain.exponentialRampToValueAtTime(0.0001, now + rel);
+      } catch(e) {}
+    }
+    // Stop the source (works for both OscillatorNode and AudioBufferSourceNode)
+    if (osc) {
+      try { osc.stop(now + rel + 0.05); } catch(e) {}
+    }
+  });
 }
 
 function ripple(el){
@@ -449,11 +497,24 @@ function buildKeyboard() {
 }
 
 function bindEvents(el, ni, oct) {
-  el.addEventListener('mousedown',  e => { e.preventDefault(); playNote(ni, oct, el); });
-  el.addEventListener('mouseup',    e => { e.preventDefault(); stopNote(ni, oct, el); });
-  el.addEventListener('mouseleave', e => { if (e.buttons)      stopNote(ni, oct, el); });
-  el.addEventListener('touchstart', e => { e.preventDefault(); playNote(ni, oct, el); }, {passive:false});
-  el.addEventListener('touchend',   e => { e.preventDefault(); stopNote(ni, oct, el); }, {passive:false});
+  // mousedown starts the note; global mouseup (on document) stops it
+  el.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    playNote(ni, oct, el);
+    pointerHeld.set('mouse', { ni, oct, el });
+  });
+
+  // Touch: each touch point tracked by identifier
+  el.addEventListener('touchstart', e => {
+    e.preventDefault();
+    playNote(ni, oct, el);
+    for (const t of e.changedTouches) {
+      touchHeld.set(t.identifier, { ni, oct, el });
+    }
+  }, {passive:false});
+  el.addEventListener('touchend',    e => { e.preventDefault(); stopNote(ni, oct, el); }, {passive:false});
+  el.addEventListener('touchcancel', e => { e.preventDefault(); stopNote(ni, oct, el); }, {passive:false});
 }
 
 // ─── Scale ────────────────────────────────────────────────────────────────────
@@ -625,3 +686,30 @@ updateHint();
 );
 
 window.addEventListener('resize', buildKeyboard);
+
+// ─── Global safety nets — release ALL stuck notes ────────────────────────────
+// If mouse is released anywhere outside a key, stop all active notes
+document.addEventListener('mouseup', () => stopAllNotes());
+
+// If window loses focus (alt-tab, etc.) stop everything
+window.addEventListener('blur', () => {
+  stopAllNotes();
+  pressed.clear(); // clear keyboard shortcut state too
+});
+
+// Touch: if all fingers lift anywhere on document
+document.addEventListener('touchend',    e => { if (e.touches.length === 0) stopAllNotes(); });
+document.addEventListener('touchcancel', e => { stopAllNotes(); });
+
+function stopAllNotes() {
+  // Collect all active note IDs and stop them
+  const ids = [...active.keys()];
+  ids.forEach(id => {
+    const [ni, oct] = id.split('-').map(Number);
+    // Find the key element if it exists
+    const el = document.querySelector(
+      `[data-note-index="${ni}"][data-octave="${oct}"]`
+    );
+    stopNote(ni, oct, el);
+  });
+}
