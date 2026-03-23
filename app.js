@@ -62,12 +62,7 @@ const PRESETS = {
     type:'sawtooth', attack:0.02, decay:0.1, sustain:0.7,
     harmonics:[{r:1,g:1}], filter:{type:'lowpass',freq:1800,Q:8},
   },
-  harmonium: {
-    // Reedy bellows-driven tone — layered harmonics with bandpass filter
-    type:'sawtooth', attack:0.04, decay:0.05, sustain:0.85,
-    harmonics:[{r:1,g:1.0},{r:2,g:.5},{r:3,g:.35},{r:4,g:.2},{r:5,g:.15},{r:6,g:.1},{r:.5,g:.08}],
-    filter:{type:'bandpass',freq:900,Q:1.2},
-  },
+  harmonium: null, // handled by playHarmonium()
 };
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -152,6 +147,12 @@ function playNote(ni, oct, el) {
   if(audioCtx.state==='suspended') audioCtx.resume();
   const id=`${ni}-${oct}`;
   if(active.has(id)) return;
+
+  if (currentInstrument === 'harmonium') {
+    playHarmonium(ni, oct, el, id);
+    return;
+  }
+
   const freq=noteHz(ni,oct);
   const p=PRESETS[currentInstrument], now=audioCtx.currentTime, nodes=[];
   p.harmonics.forEach(h=>{
@@ -178,15 +179,99 @@ function playNote(ni, oct, el) {
   if(el){ el.classList.add('active'); ripple(el); }
 }
 
+// ─── Harmonium-specific synthesis ─────────────────────────────────────────────
+// Real harmonium sound = 3 detuned reed oscillators per note +
+// LFO vibrato (bellows tremolo) + warm lowpass + rich harmonics
+function playHarmonium(ni, oct, el, id) {
+  const freq = noteHz(ni, oct);
+  const now  = audioCtx.currentTime;
+  const nodes = [];
+
+  // Master gain for this note — slow bellows attack
+  const noteGain = audioCtx.createGain();
+  noteGain.gain.setValueAtTime(0, now);
+  noteGain.gain.linearRampToValueAtTime(volumeLevel * 0.55, now + 0.09); // bellows fill
+  noteGain.gain.linearRampToValueAtTime(volumeLevel * 0.50, now + 0.25); // slight settle
+
+  // Warm lowpass — cuts the harshness above ~2kHz
+  const lpf = audioCtx.createBiquadFilter();
+  lpf.type = 'lowpass';
+  lpf.frequency.value = 2200;
+  lpf.Q.value = 0.8;
+
+  // Mild high-shelf cut — removes brittle top end
+  const hpf = audioCtx.createBiquadFilter();
+  hpf.type = 'highshelf';
+  hpf.frequency.value = 3500;
+  hpf.gain.value = -9;
+
+  // LFO — bellows tremolo/vibrato ~5.5 Hz, subtle depth
+  const lfo = audioCtx.createOscillator();
+  const lfoGain = audioCtx.createGain();
+  lfo.type = 'sine';
+  lfo.frequency.value = 5.5;
+  lfoGain.gain.value = freq * 0.004; // 0.4% pitch deviation = natural reed wobble
+  lfo.connect(lfoGain);
+
+  // Three reed ranks — slightly detuned like real harmonium reed cells
+  // rank 1: in tune, rank 2: +4 cents, rank 3: -3 cents
+  const detunes = [0, 4, -3];
+  const rankGains = [0.55, 0.30, 0.28];
+
+  detunes.forEach((detuneCents, i) => {
+    // Each rank: sawtooth (fundamental reed) + sine (octave body)
+    [
+      { type: 'sawtooth', freqMult: 1,   gainMult: 0.7  },
+      { type: 'sawtooth', freqMult: 2,   gainMult: 0.25 },
+      { type: 'sine',     freqMult: 3,   gainMult: 0.15 },
+      { type: 'sine',     freqMult: 4,   gainMult: 0.08 },
+      { type: 'sine',     freqMult: 0.5, gainMult: 0.06 }, // sub body
+    ].forEach(({ type, freqMult, gainMult }) => {
+      const osc = audioCtx.createOscillator();
+      const og  = audioCtx.createGain();
+      osc.type = type;
+      // Apply detune in cents to rank, then multiply for harmonic
+      osc.frequency.value = freq * freqMult * Math.pow(2, detuneCents / 1200);
+      og.gain.value = rankGains[i] * gainMult;
+
+      // LFO modulates pitch of each oscillator
+      lfoGain.connect(osc.frequency);
+
+      osc.connect(og);
+      og.connect(lpf);
+      osc.start(now);
+      nodes.push({ osc, og });
+    });
+  });
+
+  // Signal chain: lpf → hpf → noteGain → dry/wet
+  lpf.connect(hpf);
+  hpf.connect(noteGain);
+  noteGain.connect(dryGain);
+  noteGain.connect(wetGain);
+
+  lfo.start(now);
+  nodes.push({ osc: lfo, og: lfoGain }); // track for cleanup
+
+  active.set(id, nodes.concat([{ osc: null, og: noteGain, lpf, hpf }]));
+
+  const dn = NOTE_NAMES[((ni + currentKeyOffset) % 12 + 12) % 12];
+  noteNameEl.textContent = `${dn}${oct}`;
+  noteFreqEl.textContent = `${freq.toFixed(1)} Hz`;
+  if (el) { el.classList.add('active'); ripple(el); }
+}
+
 function stopNote(ni, oct, el) {
   const id=`${ni}-${oct}`, nodes=active.get(id);
   if(!nodes) return;
   const rel=sustainMs/1000, now=audioCtx.currentTime;
   nodes.forEach(({osc,og})=>{
-    og.gain.cancelScheduledValues(now);
-    og.gain.setValueAtTime(og.gain.value,now);
-    og.gain.exponentialRampToValueAtTime(.0001,now+rel);
-    osc.stop(now+rel+.05);
+    if(og && og.gain){
+      og.gain.cancelScheduledValues(now);
+      og.gain.setValueAtTime(og.gain.value,now);
+      og.gain.exponentialRampToValueAtTime(.0001,now+rel);
+    }
+    if(osc) try { osc.stop(now+rel+.05); } catch(e){}
   });
   active.delete(id);
   if(el) el.classList.remove('active');
