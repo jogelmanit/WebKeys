@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebKeys — Browser Piano</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- Background particles -->
+  <div class="bg-layer" aria-hidden="true">
+    <canvas id="bgCanvas"></canvas>
+  </div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="logo">
+      <span class="logo-icon">𝄞</span>
+      <span class="logo-text">WebKeys</span>
+    </div>
+    <p class="tagline">A browser instrument — play with your keyboard or touch</p>
+  </header>
+
+  <!-- Controls Panel -->
+  <section class="controls-panel" aria-label="Instrument controls">
+
+    <!-- Instrument selector -->
+    <div class="control-group" id="instrument-group">
+      <label class="control-label">Instrument</label>
+      <div class="pill-row" role="radiogroup" aria-label="Instrument type">
+        <button class="pill active" data-instrument="piano" role="radio" aria-checked="true">Piano</button>
+        <button class="pill" data-instrument="organ" role="radio" aria-checked="false">Organ</button>
+        <button class="pill" data-instrument="synth" role="radio" aria-checked="false">Synth</button>
+        <button class="pill" data-instrument="marimba" role="radio" aria-checked="false">Marimba</button>
+      </div>
+    </div>
+
+    <!-- Key / Root note -->
+    <div class="control-group">
+      <label class="control-label" for="key-select">Key <span class="key-badge" id="current-key-badge">C</span></label>
+      <div class="knob-row">
+        <button class="icon-btn" id="key-down" aria-label="Lower key">&#9660;</button>
+        <span class="knob-value" id="key-display">C Major</span>
+        <button class="icon-btn" id="key-up" aria-label="Raise key">&#9650;</button>
+      </div>
+    </div>
+
+    <!-- Octave -->
+    <div class="control-group">
+      <label class="control-label">Octave</label>
+      <div class="knob-row">
+        <button class="icon-btn" id="oct-down" aria-label="Lower octave">&#9660;</button>
+        <span class="knob-value" id="oct-display">4</span>
+        <button class="icon-btn" id="oct-up" aria-label="Raise octave">&#9650;</button>
+      </div>
+    </div>
+
+    <!-- Reverb -->
+    <div class="control-group">
+      <label class="control-label">Reverb</label>
+      <div class="slider-wrap">
+        <input type="range" id="reverb-slider" min="0" max="100" value="20" class="styled-slider" aria-label="Reverb amount" />
+        <span class="slider-val" id="reverb-val">20%</span>
+      </div>
+    </div>
+
+    <!-- Sustain / Release -->
+    <div class="control-group">
+      <label class="control-label">Sustain</label>
+      <div class="slider-wrap">
+        <input type="range" id="sustain-slider" min="100" max="3000" value="800" step="50" class="styled-slider" aria-label="Sustain duration" />
+        <span class="slider-val" id="sustain-val">0.8s</span>
+      </div>
+    </div>
+
+    <!-- Volume -->
+    <div class="control-group">
+      <label class="control-label">Volume</label>
+      <div class="slider-wrap">
+        <input type="range" id="volume-slider" min="0" max="100" value="80" class="styled-slider" aria-label="Volume" />
+        <span class="slider-val" id="volume-val">80%</span>
+      </div>
+    </div>
+
+    <!-- Scale filter -->
+    <div class="control-group" id="scale-group">
+      <label class="control-label">Scale</label>
+      <div class="pill-row" role="radiogroup" aria-label="Scale mode">
+        <button class="pill active" data-scale="chromatic" role="radio" aria-checked="true">All</button>
+        <button class="pill" data-scale="major" role="radio" aria-checked="false">Major</button>
+        <button class="pill" data-scale="minor" role="radio" aria-checked="false">Minor</button>
+        <button class="pill" data-scale="pentatonic" role="radio" aria-checked="false">Penta</button>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- Keyboard label hints -->
+  <div class="keyboard-hint">
+    <span>Keyboard shortcuts: <kbd>A</kbd>–<kbd>K</kbd> = white keys &nbsp;|&nbsp; <kbd>W</kbd><kbd>E</kbd><kbd>T</kbd><kbd>Y</kbd><kbd>U</kbd> = black keys</span>
+  </div>
+
+  <!-- Piano keyboard -->
+  <main class="keyboard-stage" aria-label="Piano keyboard">
+    <div class="keyboard-wrap" id="keyboard-wrap">
+      <!-- Keys injected by JS -->
+    </div>
+
+    <!-- Visualizer -->
+    <div class="visualizer-bar" id="visualizer" aria-hidden="true">
+      <canvas id="vizCanvas"></canvas>
+    </div>
+  </main>
+
+  <!-- Active note display -->
+  <div class="note-display" id="note-display" aria-live="polite" aria-atomic="true">
+    <span class="note-name" id="note-name">—</span>
+    <span class="note-freq" id="note-freq"></span>
+  </div>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <span>WebKeys &copy; 2026 &nbsp;·&nbsp; Built with Web Audio API</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
