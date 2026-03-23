@@ -62,7 +62,7 @@ const PRESETS = {
     type:'sawtooth', attack:0.02, decay:0.1, sustain:0.7,
     harmonics:[{r:1,g:1}], filter:{type:'lowpass',freq:1800,Q:8},
   },
-  harmonium: null, // handled by playHarmonium()
+  harmonium: null, // uses real samples — see HarmoniumSampler
 };
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -179,81 +179,118 @@ function playNote(ni, oct, el) {
   if(el){ el.classList.add('active'); ripple(el); }
 }
 
-// ─── Harmonium-specific synthesis ─────────────────────────────────────────────
-// Real harmonium sound = 3 detuned reed oscillators per note +
-// LFO vibrato (bellows tremolo) + warm lowpass + rich harmonics
-function playHarmonium(ni, oct, el, id) {
-  const freq = noteHz(ni, oct);
-  const now  = audioCtx.currentTime;
-  const nodes = [];
+// ─── Harmonium Sampler ────────────────────────────────────────────────────────
+// Loads real recorded harmonium WAV samples from nbrosowsky/tonejs-instruments
+// (MIT licensed, hosted on GitHub Pages) then pitch-shifts them for every note.
+// Sample set covers: A1 C2 D#2 F#2 A2 C3 D#3 F#3 A3 C4 D#4 F#4 A4 C5 D#5 F#5 A5
+// All other notes are covered by pitch-shifting the nearest sample.
 
-  // Master gain for this note — slow bellows attack
+const BASE_URL = 'https://nbrosowsky.github.io/tonejs-instruments/samples/harmonium/';
+
+// Available sample notes (MIDI numbers) and their filenames
+const SAMPLE_MAP = {
+  33: 'A1.mp3',  36: 'C2.mp3',  39: 'Ds2.mp3', 42: 'Fs2.mp3',
+  45: 'A2.mp3',  48: 'C3.mp3',  51: 'Ds3.mp3', 54: 'Fs3.mp3',
+  57: 'A3.mp3',  60: 'C4.mp3',  63: 'Ds4.mp3', 66: 'Fs4.mp3',
+  69: 'A4.mp3',  72: 'C5.mp3',  75: 'Ds5.mp3', 78: 'Fs5.mp3',
+  81: 'A5.mp3',
+};
+const SAMPLE_MIDIS = Object.keys(SAMPLE_MAP).map(Number).sort((a,b)=>a-b);
+
+// Cache: MIDI number → AudioBuffer
+const sampleBuffers = new Map();
+let samplesLoaded = false;
+let samplesLoading = false;
+
+// Find nearest sample MIDI for a given target MIDI
+function nearestSampleMidi(targetMidi) {
+  let best = SAMPLE_MIDIS[0];
+  let bestDist = Math.abs(targetMidi - best);
+  for (const m of SAMPLE_MIDIS) {
+    const d = Math.abs(targetMidi - m);
+    if (d < bestDist) { bestDist = d; best = m; }
+  }
+  return best;
+}
+
+// Load all samples into AudioBuffers
+async function loadHarmoniumSamples() {
+  if (samplesLoading || samplesLoaded) return;
+  samplesLoading = true;
+  const entries = Object.entries(SAMPLE_MAP);
+  await Promise.all(entries.map(async ([midi, file]) => {
+    try {
+      const resp = await fetch(BASE_URL + file);
+      const arr  = await resp.arrayBuffer();
+      const buf  = await audioCtx.decodeAudioData(arr);
+      sampleBuffers.set(Number(midi), buf);
+    } catch(e) {
+      console.warn('Failed to load sample:', file, e);
+    }
+  }));
+  samplesLoaded = true;
+  samplesLoading = false;
+  console.log(`Loaded ${sampleBuffers.size}/${entries.length} harmonium samples`);
+}
+
+function playHarmonium(ni, oct, el, id) {
+  const targetMidi = (oct + 1) * 12 + ((ni + currentKeyOffset + 120) % 12);
+  const freq = midiToHz(targetMidi);
+  const now  = audioCtx.currentTime;
+
+  // Warm lowpass shaping
+  const lpf = audioCtx.createBiquadFilter();
+  lpf.type = 'lowpass'; lpf.frequency.value = 4000; lpf.Q.value = 0.5;
+
+  // Note gain with bellows-style attack
   const noteGain = audioCtx.createGain();
   noteGain.gain.setValueAtTime(0, now);
-  noteGain.gain.linearRampToValueAtTime(volumeLevel * 0.55, now + 0.09); // bellows fill
-  noteGain.gain.linearRampToValueAtTime(volumeLevel * 0.50, now + 0.25); // slight settle
+  noteGain.gain.linearRampToValueAtTime(volumeLevel * 0.8, now + 0.06);
 
-  // Warm lowpass — cuts the harshness above ~2kHz
-  const lpf = audioCtx.createBiquadFilter();
-  lpf.type = 'lowpass';
-  lpf.frequency.value = 2200;
-  lpf.Q.value = 0.8;
-
-  // Mild high-shelf cut — removes brittle top end
-  const hpf = audioCtx.createBiquadFilter();
-  hpf.type = 'highshelf';
-  hpf.frequency.value = 3500;
-  hpf.gain.value = -9;
-
-  // LFO — bellows tremolo/vibrato ~5.5 Hz, subtle depth
-  const lfo = audioCtx.createOscillator();
-  const lfoGain = audioCtx.createGain();
-  lfo.type = 'sine';
-  lfo.frequency.value = 5.5;
-  lfoGain.gain.value = freq * 0.004; // 0.4% pitch deviation = natural reed wobble
-  lfo.connect(lfoGain);
-
-  // Three reed ranks — slightly detuned like real harmonium reed cells
-  // rank 1: in tune, rank 2: +4 cents, rank 3: -3 cents
-  const detunes = [0, 4, -3];
-  const rankGains = [0.55, 0.30, 0.28];
-
-  detunes.forEach((detuneCents, i) => {
-    // Each rank: sawtooth (fundamental reed) + sine (octave body)
-    [
-      { type: 'sawtooth', freqMult: 1,   gainMult: 0.7  },
-      { type: 'sawtooth', freqMult: 2,   gainMult: 0.25 },
-      { type: 'sine',     freqMult: 3,   gainMult: 0.15 },
-      { type: 'sine',     freqMult: 4,   gainMult: 0.08 },
-      { type: 'sine',     freqMult: 0.5, gainMult: 0.06 }, // sub body
-    ].forEach(({ type, freqMult, gainMult }) => {
-      const osc = audioCtx.createOscillator();
-      const og  = audioCtx.createGain();
-      osc.type = type;
-      // Apply detune in cents to rank, then multiply for harmonic
-      osc.frequency.value = freq * freqMult * Math.pow(2, detuneCents / 1200);
-      og.gain.value = rankGains[i] * gainMult;
-
-      // LFO modulates pitch of each oscillator
-      lfoGain.connect(osc.frequency);
-
-      osc.connect(og);
-      og.connect(lpf);
-      osc.start(now);
-      nodes.push({ osc, og });
-    });
-  });
-
-  // Signal chain: lpf → hpf → noteGain → dry/wet
-  lpf.connect(hpf);
-  hpf.connect(noteGain);
+  lpf.connect(noteGain);
   noteGain.connect(dryGain);
   noteGain.connect(wetGain);
 
-  lfo.start(now);
-  nodes.push({ osc: lfo, og: lfoGain }); // track for cleanup
+  if (samplesLoaded && sampleBuffers.size > 0) {
+    // ── Sample playback with pitch shift ──────────────────────────────────────
+    const sampleMidi = nearestSampleMidi(targetMidi);
+    const buf = sampleBuffers.get(sampleMidi);
+    if (buf) {
+      // playbackRate = 2^((target - sample) / 12)
+      const semitonesDiff = targetMidi - sampleMidi;
+      const playbackRate  = Math.pow(2, semitonesDiff / 12);
 
-  active.set(id, nodes.concat([{ osc: null, og: noteGain, lpf, hpf }]));
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+      src.playbackRate.value = playbackRate;
+      src.loop = true;
+      // Loop the sustain portion (avoid click — loop last 80% of buffer)
+      src.loopStart = buf.duration * 0.15;
+      src.loopEnd   = buf.duration * 0.95;
+      src.connect(lpf);
+      src.start(now);
+
+      active.set(id, [{ osc: src, og: noteGain }]);
+    }
+  } else {
+    // ── Fallback synthesis while samples load ─────────────────────────────────
+    // 3 detuned sawtooth oscillators simulating reed ranks
+    const nodes = [];
+    [[0,0.55],[4,0.30],[-3,0.28]].forEach(([cents, g]) => {
+      const osc = audioCtx.createOscillator();
+      const og  = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.value = freq * Math.pow(2, cents/1200);
+      og.gain.value = g * 0.4;
+      osc.connect(og); og.connect(lpf);
+      osc.start(now);
+      nodes.push({osc, og});
+    });
+    active.set(id, nodes.concat([{osc:null, og:noteGain}]));
+
+    // Trigger actual sample load in background — next keypress will use samples
+    if (!samplesLoading) loadHarmoniumSamples();
+  }
 
   const dn = NOTE_NAMES[((ni + currentKeyOffset) % 12 + 12) % 12];
   noteNameEl.textContent = `${dn}${oct}`;
@@ -458,6 +495,10 @@ document.querySelectorAll('#instrument-group .pill').forEach(b=>{
     document.querySelectorAll('#instrument-group .pill').forEach(x=>{x.classList.remove('active');x.setAttribute('aria-checked','false');});
     b.classList.add('active'); b.setAttribute('aria-checked','true');
     currentInstrument=b.dataset.instrument;
+    // Pre-load harmonium samples as soon as instrument is selected
+    if (currentInstrument === 'harmonium' && audioCtx && !samplesLoaded) {
+      loadHarmoniumSamples();
+    }
   };
 });
 document.querySelectorAll('#scale-group .pill').forEach(b=>{
@@ -574,7 +615,13 @@ updateKeyDisplay();
 updateHint();
 
 ['click','keydown','touchstart'].forEach(ev=>
-  document.addEventListener(ev,()=>initAudio(),{once:true})
+  document.addEventListener(ev,()=>{
+    initAudio();
+    // If harmonium is already selected, start loading samples right away
+    if (currentInstrument === 'harmonium' && !samplesLoaded) {
+      loadHarmoniumSamples();
+    }
+  },{once:true})
 );
 
 window.addEventListener('resize', buildKeyboard);
