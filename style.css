@@ -258,6 +258,8 @@ header, .controls-panel, .keyboard-hint,
   overflow-x: auto;
   overflow-y: visible;
   max-width: 98vw;
+  /* Ensure wrap never collapses */
+  min-height: calc(var(--white-key-h) + 42px);
 }
 
 /* Single flat row — white keys flex side by side,
@@ -267,6 +269,10 @@ header, .controls-panel, .keyboard-hint,
   display: flex;
   flex-direction: row;
   align-items: flex-start;
+  /* Explicit height so the row never collapses */
+  height: var(--white-key-h);
+  /* Allow black keys to overflow upward if needed */
+  overflow: visible;
 }
 
 /* ---- White keys — ORIGINAL STYLE UNCHANGED ---- */
