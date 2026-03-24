@@ -23,28 +23,41 @@ const SCALE_INTERVALS = {
   Oct2 whites : I O P [ ]  (only 5)
   Oct2 blacks : 8 9 - =    (only 4)
 */
+/*
+  Web Harmonium exact key layout:
+  White keys: `  q  w  e  r  t  y  u  i  o  p  [  ]  \
+  Black keys:  1  2     4  5     7  8  9     -     =
+  Notes:       C  D  E  F  G  A  B  C  D  E  F  G  A  B
+               ←── octave 1 ──────────┼── octave 2 ──────→
+*/
 const KEY_NOTE_MAP = {
-  'q': { noteIndex:0,  octaveOffset:0, isBlack:false, label:'Q' },
-  'w': { noteIndex:2,  octaveOffset:0, isBlack:false, label:'W' },
-  'e': { noteIndex:4,  octaveOffset:0, isBlack:false, label:'E' },
-  'r': { noteIndex:5,  octaveOffset:0, isBlack:false, label:'R' },
-  't': { noteIndex:7,  octaveOffset:0, isBlack:false, label:'T' },
-  'y': { noteIndex:9,  octaveOffset:0, isBlack:false, label:'Y' },
-  'u': { noteIndex:11, octaveOffset:0, isBlack:false, label:'U' },
-  'i': { noteIndex:0,  octaveOffset:1, isBlack:false, label:'I' },
-  'o': { noteIndex:2,  octaveOffset:1, isBlack:false, label:'O' },
-  'p': { noteIndex:4,  octaveOffset:1, isBlack:false, label:'P' },
-  '[': { noteIndex:5,  octaveOffset:1, isBlack:false, label:'[' },
-  ']': { noteIndex:7,  octaveOffset:1, isBlack:false, label:']' },
-  '1': { noteIndex:1,  octaveOffset:0, isBlack:true,  label:'1' },
-  '2': { noteIndex:3,  octaveOffset:0, isBlack:true,  label:'2' },
-  '4': { noteIndex:6,  octaveOffset:0, isBlack:true,  label:'4' },
-  '5': { noteIndex:8,  octaveOffset:0, isBlack:true,  label:'5' },
-  '6': { noteIndex:10, octaveOffset:0, isBlack:true,  label:'6' },
-  '8': { noteIndex:1,  octaveOffset:1, isBlack:true,  label:'8' },
-  '9': { noteIndex:3,  octaveOffset:1, isBlack:true,  label:'9' },
-  '-': { noteIndex:6,  octaveOffset:1, isBlack:true,  label:'-' },
-  '=': { noteIndex:8,  octaveOffset:1, isBlack:true,  label:'=' },
+  // ── Octave 1 white keys (` q w e r t y u) ──
+  '`': { noteIndex:0,  octaveOffset:0, isBlack:false, label:'`'  },
+  'q': { noteIndex:2,  octaveOffset:0, isBlack:false, label:'Q'  },
+  'w': { noteIndex:4,  octaveOffset:0, isBlack:false, label:'W'  },
+  'e': { noteIndex:5,  octaveOffset:0, isBlack:false, label:'E'  },
+  'r': { noteIndex:7,  octaveOffset:0, isBlack:false, label:'R'  },
+  't': { noteIndex:9,  octaveOffset:0, isBlack:false, label:'T'  },
+  'y': { noteIndex:11, octaveOffset:0, isBlack:false, label:'Y'  },
+  // ── Octave 2 white keys (u i o p [ ] \) ──
+  'u': { noteIndex:0,  octaveOffset:1, isBlack:false, label:'U'  },
+  'i': { noteIndex:2,  octaveOffset:1, isBlack:false, label:'I'  },
+  'o': { noteIndex:4,  octaveOffset:1, isBlack:false, label:'O'  },
+  'p': { noteIndex:5,  octaveOffset:1, isBlack:false, label:'P'  },
+  '[': { noteIndex:7,  octaveOffset:1, isBlack:false, label:'['  },
+  ']': { noteIndex:9,  octaveOffset:1, isBlack:false, label:']'  },
+  '\\': { noteIndex:11, octaveOffset:1, isBlack:false, label:'\\' },
+  // ── Octave 1 black keys (1 2 4 5 7) ──
+  '1': { noteIndex:1,  octaveOffset:0, isBlack:true,  label:'1'  },
+  '2': { noteIndex:3,  octaveOffset:0, isBlack:true,  label:'2'  },
+  '4': { noteIndex:6,  octaveOffset:0, isBlack:true,  label:'4'  },
+  '5': { noteIndex:8,  octaveOffset:0, isBlack:true,  label:'5'  },
+  '7': { noteIndex:10, octaveOffset:0, isBlack:true,  label:'7'  },
+  // ── Octave 2 black keys (8 9 - =) ──
+  '8': { noteIndex:1,  octaveOffset:1, isBlack:true,  label:'8'  },
+  '9': { noteIndex:3,  octaveOffset:1, isBlack:true,  label:'9'  },
+  '-': { noteIndex:6,  octaveOffset:1, isBlack:true,  label:'-'  },
+  '=': { noteIndex:8,  octaveOffset:1, isBlack:true,  label:'='  },
 };
 
 // ─── Instrument presets ───────────────────────────────────────────────────────
@@ -375,19 +388,19 @@ function buildKeyboard() {
   const bkw = getCSSVar('--black-key-w') || 32;
   const bkh = getCSSVar('--black-key-h') || 130;
 
-  // Total white keys = 7 (oct1) + 5 (oct2, C D E F G) = 12
-  const totalWhites = 7 + 5;
+  // 14 white keys total: 7 per octave x 2 octaves
+  // Matches original web harmonium: ` q w e r t y | u i o p [ ] \
+  const totalWhites = 14;
   const totalWidth  = totalWhites * wkw;
 
-  // Create the single flat row
   const row = document.createElement('div');
   row.className = 'keys-row';
   row.style.width  = totalWidth + 'px';
   row.style.height = wkh + 'px';
 
-  // ── Render white keys in order ──
-  // oct1: C D E F G A B  (7 keys, indices 0–6)
-  // oct2: C D E F G      (5 keys, indices 7–11)
+  // ── White keys: 7 per octave (C D E F G A B) ──────────────────────────────
+  // Oct1 keys: ` q w e r t y   → C D E F G A B
+  // Oct2 keys: u i o p [ ] \  → C D E F G A B
   const allWhites = [
     { ni:0,  oct:currentOctave,   kbIdx:0, octIdx:0 },
     { ni:2,  oct:currentOctave,   kbIdx:1, octIdx:0 },
@@ -401,25 +414,29 @@ function buildKeyboard() {
     { ni:4,  oct:currentOctave+1, kbIdx:2, octIdx:1 },
     { ni:5,  oct:currentOctave+1, kbIdx:3, octIdx:1 },
     { ni:7,  oct:currentOctave+1, kbIdx:4, octIdx:1 },
+    { ni:9,  oct:currentOctave+1, kbIdx:5, octIdx:1 },
+    { ni:11, oct:currentOctave+1, kbIdx:6, octIdx:1 },
   ];
 
   allWhites.forEach(({ ni, oct, kbIdx, octIdx }) => {
     const el = document.createElement('div');
     el.className = 'key-white';
     if (!isNoteInScale(ni)) el.classList.add('scale-inactive');
-    const lbl = KB_LABELS.white[octIdx][kbIdx] || '';
+    const lbl = LABELS.white[octIdx][kbIdx] || '';
     const dn  = NOTE_NAMES[((ni + currentKeyOffset) % 12 + 12) % 12];
     el.dataset.noteIndex = ni;
     el.dataset.octave    = oct;
-    el.dataset.note      = `${dn}${oct}`;
+    el.dataset.note      = dn + oct;
     if (lbl) el.dataset.shortcut = lbl;
     bindEvents(el, ni, oct);
     row.appendChild(el);
   });
 
-  // ── Render black keys absolutely ──
-  // For each octave, calculate absolute left from the start of that octave's white group
-  const octaveStartX = [0, 7 * wkw]; // pixel start of oct1 and oct2
+  // ── Black keys: 5 per octave (C# D# F# G# A#) ─────────────────────────────
+  // afterWhite = index of the white key immediately to the LEFT of this black key
+  // Oct1: 1(C#)→after 0(C), 3(D#)→after 1(D), 6(F#)→after 3(F), 8(G#)→after 4(G), 10(A#)→after 5(A)
+  // Oct2: same pattern, offset by 7 white keys
+  const octaveStartX = [0, 7 * wkw];
 
   const allBlacks = [
     { ni:1,  oct:currentOctave,   afterWhite:0, octIdx:0, kbIdx:0 },
@@ -431,31 +448,28 @@ function buildKeyboard() {
     { ni:3,  oct:currentOctave+1, afterWhite:1, octIdx:1, kbIdx:1 },
     { ni:6,  oct:currentOctave+1, afterWhite:3, octIdx:1, kbIdx:2 },
     { ni:8,  oct:currentOctave+1, afterWhite:4, octIdx:1, kbIdx:3 },
+    { ni:10, oct:currentOctave+1, afterWhite:5, octIdx:1, kbIdx:4 },
   ];
 
   allBlacks.forEach(({ ni, oct, afterWhite, octIdx, kbIdx }) => {
     const el = document.createElement('div');
     el.className = 'key-black';
     if (!isNoteInScale(ni)) el.classList.add('scale-inactive');
-    const lbl = KB_LABELS.black[octIdx][kbIdx] || '';
+    const lbl = LABELS.black[octIdx][kbIdx] || '';
     const dn  = NOTE_NAMES[((ni + currentKeyOffset) % 12 + 12) % 12];
     el.dataset.noteIndex = ni;
     el.dataset.octave    = oct;
-    el.dataset.note      = `${dn}${oct}`;
+    el.dataset.note      = dn + oct;
     if (lbl) el.dataset.shortcut = lbl;
-
-    // Black key sits between two white keys:
-    // left = octaveStart + (afterWhite+1)*wkw - bkw/2
     const leftPx = octaveStartX[octIdx] + (afterWhite + 1) * wkw - Math.round(bkw / 2);
     el.style.left = leftPx + 'px';
-
     bindEvents(el, ni, oct);
     row.appendChild(el);
   });
 
   kbWrap.appendChild(row);
 
-  // Update visualizer width to match
+  // Update visualizer width
   const vizBar = document.querySelector('.visualizer-bar');
   if (vizBar) vizBar.style.width = (totalWidth + 36) + 'px';
 }
@@ -546,10 +560,12 @@ volSl.oninput=()=>{ volumeLevel=volSl.value/100; volVal.textContent=`${volSl.val
 
 const pressed = new Set();
 function resolveKey(e){
-  if(e.key==='-') return '-';
-  if(e.key==='=') return '=';
-  if(e.key==='[') return '[';
-  if(e.key===']') return ']';
+  if(e.key==='-')   return '-';
+  if(e.key==='=')   return '=';
+  if(e.key==='[')   return '[';
+  if(e.key===']')   return ']';
+  if(e.key==='`')   return '`';
+  if(e.key==='\\') return '\\';
   return e.key.toLowerCase();
 }
 document.addEventListener('keydown', e=>{
@@ -625,7 +641,7 @@ function initParticles(){
 
 function updateHint(){
   const h=document.querySelector('.keyboard-hint span');
-  if(h) h.innerHTML='White keys: <kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd><kbd>T</kbd><kbd>Y</kbd><kbd>U</kbd> &nbsp;·&nbsp; Black keys: <kbd>1</kbd><kbd>2</kbd><kbd>4</kbd><kbd>5</kbd><kbd>6</kbd> &nbsp;·&nbsp; Next octave: <kbd>I</kbd><kbd>O</kbd><kbd>P</kbd><kbd>[</kbd><kbd>]</kbd> / <kbd>8</kbd><kbd>9</kbd><kbd>-</kbd><kbd>=</kbd>';
+  if(h) h.innerHTML='White: <kbd>`</kbd><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd><kbd>T</kbd><kbd>Y</kbd> / <kbd>U</kbd><kbd>I</kbd><kbd>O</kbd><kbd>P</kbd><kbd>[</kbd><kbd>]</kbd><kbd>\\</kbd> &nbsp;·&nbsp; Black: <kbd>1</kbd><kbd>2</kbd><kbd>4</kbd><kbd>5</kbd><kbd>7</kbd> / <kbd>8</kbd><kbd>9</kbd><kbd>-</kbd><kbd>=</kbd>';
 }
 
 // ─── Init ────────────────────────────────────────────────────────────────────
