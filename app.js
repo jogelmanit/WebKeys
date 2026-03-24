@@ -376,19 +376,18 @@ const LABELS = {
   black: [['1','2','4','5','6'],['8','9','-','=','']],
 };
 
-function getCSSVar(name) {
-  return parseInt(getComputedStyle(document.documentElement).getPropertyValue(name).trim()) || 0;
-}
-
 function buildKeyboard() {
   kbWrap.innerHTML = '';
 
-  const wkw = getCSSVar('--white-key-w') || 52;
-  const wkh = getCSSVar('--white-key-h') || 210;
-  const bkw = getCSSVar('--black-key-w') || 32;
-  const bkh = getCSSVar('--black-key-h') || 130;
+  // Read CSS variables — these MUST match :root in style.css exactly
+  // Using a fresh read every call so responsive breakpoints work
+  const style = getComputedStyle(document.documentElement);
+  const wkw = parseFloat(style.getPropertyValue('--white-key-w')) || 52;
+  const wkh = parseFloat(style.getPropertyValue('--white-key-h')) || 210;
+  const bkw = parseFloat(style.getPropertyValue('--black-key-w')) || 32;
+  const bkh = parseFloat(style.getPropertyValue('--black-key-h')) || 130;
 
-  // 14 white keys total: 7 per octave x 2 octaves
+  // 14 white keys total: 7 per octave × 2 octaves
   // Matches original web harmonium: ` q w e r t y | u i o p [ ] \
   const totalWhites = 14;
   const totalWidth  = totalWhites * wkw;
