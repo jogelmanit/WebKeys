@@ -371,7 +371,7 @@ const BLACK_AFTER_WHITE = { 1:0, 3:1, 6:3, 8:4, 10:5 };
 const WHITE_NOTES = [0,2,4,5,7,9,11];
 const BLACK_NOTES = [1,3,6,8,10];
 
-const KB_LABELS = {
+const LABELS = {
   white: [['Q','W','E','R','T','Y','U'],['I','O','P','[',']','','']],
   black: [['1','2','4','5','6'],['8','9','-','=','']],
 };
