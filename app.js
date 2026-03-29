@@ -372,8 +372,21 @@ const WHITE_NOTES = [0,2,4,5,7,9,11];
 const BLACK_NOTES = [1,3,6,8,10];
 
 const LABELS = {
-  white: [['Q','W','E','R','T','Y','U'],['I','O','P','[',']','','']],
-  black: [['1','2','4','5','6'],['8','9','-','=','']],
+  // white[octIdx][kbIdx] — label shown on each white key
+  // Must match KEY_NOTE_MAP exactly:
+  // Oct1: ` Q W E R T Y  → C D E F G A B
+  // Oct2: U I O P [ ] \  → C D E F G A B
+  white: [
+    ['`', 'Q', 'W', 'E', 'R', 'T', 'Y'],   // octave 1
+    ['U', 'I', 'O', 'P', '[', ']', '\\'], // octave 2
+  ],
+  // black[octIdx][kbIdx] — label shown on each black key
+  // Oct1: 1 2 4 5 7  → C# D# F# G# A#
+  // Oct2: 8 9 - =    → C# D# F# G# (A# has no mapping)
+  black: [
+    ['1', '2', '4', '5', '7'],  // octave 1
+    ['8', '9', '-', '=', ''],   // octave 2 (A# unmapped)
+  ],
 };
 
 function buildKeyboard() {
