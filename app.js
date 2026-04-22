@@ -39,6 +39,8 @@ const KEY_NOTE_MAP = {
   '9': { noteIndex:3,  octaveOffset:1, isBlack:true,  label:'9'  },
   '-': { noteIndex:6,  octaveOffset:1, isBlack:true,  label:'-'  },
   '=': { noteIndex:8,  octaveOffset:1, isBlack:true,  label:'='  },
+  'Backspace': { noteIndex:10, octaveOffset:1, isBlack:true,  label:'⌫' }, 
+  
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -966,7 +968,7 @@ var LABELS = {
   ],
   black: [
     ['1', '2', '4', '5', '6'],
-    ['8', '9', '-', '=', ''],
+    ['8', '9', '-', '=', '⌫'],
   ],
 };
 
@@ -1145,6 +1147,7 @@ function resolveKey(e){
   if(e.key===']')   return ']';
   if(e.key==='`')   return '`';
   if(e.key==='\\') return '\\';
+  if(e.key==='Backspace') return 'Backspace';  
   return e.key.toLowerCase();
 }
 document.addEventListener('keydown', function(e){
@@ -1234,7 +1237,7 @@ function initParticles(){
 
 function updateHint(){
   var h=document.querySelector('.keyboard-hint span');
-  if(h) h.innerHTML='White: <kbd>`</kbd><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd><kbd>T</kbd><kbd>Y</kbd> / <kbd>U</kbd><kbd>I</kbd><kbd>O</kbd><kbd>P</kbd><kbd>[</kbd><kbd>]</kbd><kbd>\\</kbd> &nbsp;·&nbsp; Black: <kbd>1</kbd><kbd>2</kbd><kbd>4</kbd><kbd>5</kbd><kbd>6</kbd> / <kbd>8</kbd><kbd>9</kbd><kbd>-</kbd><kbd>=</kbd>';
+  if(h) h.innerHTML='White: <kbd>`</kbd><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd><kbd>T</kbd><kbd>Y</kbd> / <kbd>U</kbd><kbd>I</kbd><kbd>O</kbd><kbd>P</kbd><kbd>[</kbd><kbd>]</kbd><kbd>\\</kbd> &nbsp;·&nbsp; Black: <kbd>1</kbd><kbd>2</kbd><kbd>4</kbd><kbd>5</kbd><kbd>6</kbd> / <kbd>8</kbd><kbd>9</kbd><kbd>-</kbd><kbd>=</kbd><kbd>⌫</kbd>';
 }
 
 // ─── Init ────────────────────────────────────────────────────────────────────
