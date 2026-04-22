@@ -135,6 +135,7 @@
         <button class="pill"        data-instrument="organ"     role="radio" aria-checked="false">Organ</button>
         <button class="pill"        data-instrument="synth"     role="radio" aria-checked="false">Synth</button>
         <button class="pill"        data-instrument="harmonium" role="radio" aria-checked="false">Harmonium</button>
+        <button class="pill"        data-instrument="violin"    role="radio" aria-checked="false">Violin 🎻</button>
       </div>
     </div>
 
@@ -168,7 +169,7 @@
       <label class="control-label" for="sustain-slider">Sustain</label>
       <div class="slider-wrap">
         <input type="range" id="sustain-slider" min="100" max="3000" value="800" step="50" class="styled-slider" aria-label="Sustain duration" />
-        <span class="slider-val" id="sustain-val">0.8s</span>
+        <span class="slider-val" id="sust-val">0.8s</span>
       </div>
     </div>
 
@@ -194,7 +195,7 @@
 
   <!-- Keyboard shortcut hints -->
   <div class="keyboard-hint" aria-label="Keyboard shortcut guide">
-    <span>White: <kbd>`</kbd><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd><kbd>T</kbd><kbd>Y</kbd> / <kbd>U</kbd><kbd>I</kbd><kbd>O</kbd><kbd>P</kbd><kbd>[</kbd><kbd>]</kbd><kbd>\</kbd> &nbsp;·&nbsp; Black: <kbd>1</kbd><kbd>2</kbd><kbd>4</kbd><kbd>5</kbd><kbd>7</kbd> / <kbd>8</kbd><kbd>9</kbd><kbd>-</kbd><kbd>=</kbd></span>
+    <span>White: <kbd>`</kbd><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd><kbd>R</kbd><kbd>T</kbd><kbd>Y</kbd> / <kbd>U</kbd><kbd>I</kbd><kbd>O</kbd><kbd>P</kbd><kbd>[</kbd><kbd>]</kbd><kbd>\</kbd> &nbsp;·&nbsp; Black: <kbd>1</kbd><kbd>2</kbd><kbd>4</kbd><kbd>5</kbd><kbd>6</kbd> / <kbd>8</kbd><kbd>9</kbd><kbd>-</kbd><kbd>=</kbd></span>
   </div>
 
   <!-- ══════════════════════════════════════════
@@ -215,6 +216,39 @@
     <span class="note-name" id="note-name">—</span>
     <span class="note-freq" id="note-freq"></span>
   </div>
+
+
+  <!-- ══ CHORD DETECTOR + LOOPER ══ -->
+  <section class="chord-panel" aria-label="Chord detector and looper">
+
+    <div class="chord-display-wrap">
+      <span class="chord-label">Chord</span>
+      <span id="chord-display" class="chord-name">—</span>
+    </div>
+
+    <div class="looper-controls">
+      <button id="btn-record" class="loop-btn">⏺ Record</button>
+      <button id="btn-play"   class="loop-btn">▶ Play</button>
+
+      <div class="loop-field">
+        <label>BPM</label>
+        <input id="bpm-input" type="range" min="40" max="240" value="120" />
+        <span id="bpm-val">120</span>
+      </div>
+
+      <div class="loop-field">
+        <label>Bars</label>
+        <input id="bars-input" type="range" min="1" max="16" value="1" />
+        <span id="bars-val">1</span>
+      </div>
+
+      <div class="loop-field">
+        <label>Loop Vol</label>
+        <input id="loop-vol" type="range" min="0" max="1" step="0.01" value="0.5" />
+      </div>
+    </div>
+
+  </section>
 
   <!-- ══════════════════════════════════════════
        SEO CONTENT SECTION
