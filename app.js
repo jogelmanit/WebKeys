@@ -461,7 +461,7 @@ function initAudio() {
   audioCtx = new (window.AudioContext||window.webkitAudioContext)();
 
   masterGain = audioCtx.createGain();
-  masterGain.gain.value = 1.0;
+  masterGain.gain.value = Math.pow(volumeLevel, 0.7);
   masterGain.connect(audioCtx.destination);
 
   setTimeout(function() { loadPianoSamples(); }, 100);
@@ -692,10 +692,11 @@ function playPianoReal(ni, oct, el, id) {
     gainNode: gainNode,
     type: 'piano-real',
     stop: function(stopTime) {
+      var rel = sustainMs / 1000;
       gainNode.gain.cancelScheduledValues(stopTime);
       gainNode.gain.setValueAtTime(gainNode.gain.value, stopTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, stopTime + 0.8);
-      try { source.stop(stopTime + 0.85); } catch(e) {}
+      gainNode.gain.exponentialRampToValueAtTime(0.001, stopTime + rel);
+      try { source.stop(stopTime + rel + 0.05); } catch(e) {}
     }
   });
 
@@ -728,10 +729,11 @@ function playPianoFallback(ni, oct, el, id, freq) {
     gainNode: gainNode,
     type: 'piano-fallback',
     stop: function(stopTime) {
+      var rel = sustainMs / 1000;
       gainNode.gain.cancelScheduledValues(stopTime);
       gainNode.gain.setValueAtTime(gainNode.gain.value, stopTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, stopTime + 0.5);
-      try { osc.stop(stopTime + 0.55); } catch(e) {}
+      gainNode.gain.exponentialRampToValueAtTime(0.001, stopTime + rel);
+      try { osc.stop(stopTime + rel + 0.05); } catch(e) {}
     }
   });
   
@@ -1135,7 +1137,7 @@ reverbSl.oninput=function(){
 var sustSl=document.getElementById('sustain-slider'), sustVal=document.getElementById('sust-val');
 sustSl.oninput=function(){ sustainMs=+sustSl.value; sustVal.textContent=(sustainMs/1000).toFixed(1)+'s'; };
 var volSl=document.getElementById('volume-slider'), volVal=document.getElementById('volume-val');
-volSl.oninput=function(){ volumeLevel=volSl.value/100; volVal.textContent=volSl.value+'%'; if(masterGain) masterGain.gain.value=volumeLevel; };
+volSl.oninput=function(){ volumeLevel=volSl.value/100; volVal.textContent=volSl.value+'%'; if(masterGain) masterGain.gain.value=Math.pow(volumeLevel, 0.7); };
 
 // ─── Keyboard input ───────────────────────────────────────────────────────────
 
